@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from typing import List, Dict
 import json
+import os
 
 # Page configuration
 st.set_page_config(
@@ -11,8 +12,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# API base URL
-API_BASE_URL = "http://127.0.0.1:8000"
+# API base URL - uses environment variable or deployed backend, localhost for local dev
+API_BASE_URL = os.getenv("API_BASE_URL", "https://qa-agent-ddfw.onrender.com")
 
 # Session state initialization
 if 'test_cases' not in st.session_state:
@@ -97,10 +98,10 @@ def upload_files(doc_files: List, html_file) -> Dict:
 
     except requests.exceptions.ConnectionError:
         st.error("Cannot connect to backend server. Please ensure the FastAPI server is running on port 8000.")
-        return None
+        return None # type: ignore
     except requests.exceptions.RequestException as e:
         st.error(f"Upload failed: {str(e)}")
-        return None
+        return None # type: ignore
 
 
 def generate_test_cases() -> Dict:
@@ -117,10 +118,10 @@ def generate_test_cases() -> Dict:
             st.error(f"Test case generation failed: {error_detail}")
         except:
             st.error(f"Test case generation failed: {str(e)}")
-        return None
+        return None # type: ignore
     except requests.exceptions.RequestException as e:
         st.error(f"Test case generation failed: {str(e)}")
-        return None
+        return None # type: ignore
 
 
 def generate_script(test_case: Dict) -> Dict:
@@ -137,7 +138,7 @@ def generate_script(test_case: Dict) -> Dict:
 
     except requests.exceptions.RequestException as e:
         st.error(f"Script generation failed: {str(e)}")
-        return None
+        return None # type: ignore
 
 
 # Header

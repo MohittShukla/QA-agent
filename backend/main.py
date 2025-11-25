@@ -20,6 +20,9 @@ if not GEMINI_API_KEY:
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-2.5-flash')
 
+# CORS origins - get from environment variable, default to all for local dev
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
 # Global knowledge base to store uploaded documents and HTML
 KNOWLEDGE_BASE = {
     "docs": "",
@@ -36,7 +39,7 @@ app = FastAPI(
 # CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (adjust for production)
+    allow_origins=ALLOWED_ORIGINS,  # Configured via environment variable
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
@@ -123,10 +126,10 @@ async def upload_files(
         for file in files:
             file_content = await file.read()
 
-            if file.filename.lower().endswith('.pdf'):
+            if file.filename.lower().endswith('.pdf'): # type: ignore
                 text = extract_text_from_pdf(file_content)
                 docs_text.append(f"--- Document: {file.filename} ---\n{text}\n")
-            elif file.filename.lower().endswith('.txt'):
+            elif file.filename.lower().endswith('.txt'): # type: ignore
                 text = extract_text_from_txt(file_content)
                 docs_text.append(f"--- Document: {file.filename} ---\n{text}\n")
             else:
