@@ -1,0 +1,156 @@
+PAYMENT API SPECIFICATION
+=========================
+
+VERSION: 1.0
+DATE: 2025-11-25
+BASE URL: https://api.payment.example.com
+
+
+ENDPOINT: Process Payment
+--------------------------
+
+METHOD: POST
+PATH: /api/pay
+CONTENT-TYPE: application/json
+AUTHENTICATION: Bearer Token (Optional for test environment)
+
+
+REQUEST BODY
+------------
+{
+  "name": "string (required, min: 2 chars, max: 100 chars)",
+  "email": "string (required, valid email format)",
+  "creditCard": "string (required, 13-19 digits)",
+  "expiry": "string (required, format: MM/YY)",
+  "cvv": "string (required, exactly 3 digits)"
+}
+
+Example Request:
+{
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "creditCard": "4532015112830366",
+  "expiry": "12/26",
+  "cvv": "123"
+}
+
+
+RESPONSE CODES
+--------------
+
+200 OK - Payment Successful
+----------------------------
+Description: Payment was processed successfully
+Response Body:
+{
+  "status": "success",
+  "transactionId": "string (unique transaction identifier)",
+  "amount": "number (transaction amount)",
+  "timestamp": "string (ISO 8601 format)",
+  "message": "Payment processed successfully"
+}
+
+Example:
+{
+  "status": "success",
+  "transactionId": "TXN-20251125-ABC123",
+  "amount": 99.99,
+  "timestamp": "2025-11-25T10:30:45Z",
+  "message": "Payment processed successfully"
+}
+
+
+400 Bad Request - Validation Error
+-----------------------------------
+Description: Request validation failed due to invalid or missing data
+Response Body:
+{
+  "status": "error",
+  "errorCode": "string (error code identifier)",
+  "message": "string (user-friendly error message)",
+  "errors": [
+    {
+      "field": "string (field name that failed validation)",
+      "reason": "string (specific validation failure reason)"
+    }
+  ]
+}
+
+Example:
+{
+  "status": "error",
+  "errorCode": "VALIDATION_ERROR",
+  "message": "Payment validation failed",
+  "errors": [
+    {
+      "field": "cvv",
+      "reason": "CVV must be exactly 3 digits"
+    },
+    {
+      "field": "email",
+      "reason": "Email format is invalid"
+    }
+  ]
+}
+
+Common 400 Error Codes:
+- VALIDATION_ERROR: Input validation failed
+- INVALID_CARD: Credit card number is invalid
+- CARD_EXPIRED: Card expiry date is in the past
+- INVALID_CVV: CVV format is incorrect
+- INVALID_EMAIL: Email format is invalid
+- MISSING_FIELD: Required field is missing
+- AGE_RESTRICTED: User does not meet age requirement (18+)
+
+
+401 Unauthorized
+----------------
+Description: Authentication failed or token is missing/invalid
+Response Body:
+{
+  "status": "error",
+  "errorCode": "UNAUTHORIZED",
+  "message": "Authentication required"
+}
+
+
+500 Internal Server Error
+--------------------------
+Description: Server encountered an unexpected error
+Response Body:
+{
+  "status": "error",
+  "errorCode": "INTERNAL_ERROR",
+  "message": "An unexpected error occurred. Please try again later."
+}
+
+
+VALIDATION RULES
+----------------
+1. Name: Required, 2-100 characters
+2. Email: Required, valid email format (contains @ and domain)
+3. Credit Card: Required, 13-19 digits, passes Luhn check
+4. Expiry: Required, MM/YY format, future date
+5. CVV: Required, exactly 3 numeric digits
+6. Age: User must be 18+ (verified via additional mechanism)
+
+
+RATE LIMITING
+-------------
+- Maximum 100 requests per minute per IP address
+- Exceeding limit returns 429 Too Many Requests
+
+
+TESTING NOTES
+-------------
+Test Card Numbers:
+- Valid: 4532015112830366 (Visa)
+- Valid: 5425233430109903 (MasterCard)
+- Invalid: 1234567890123456 (fails Luhn check)
+
+Test Scenarios:
+1. Valid payment: Returns 200 with transaction details
+2. Invalid CVV (2 digits): Returns 400 with CVV error
+3. Invalid email (no @): Returns 400 with email error
+4. Expired card: Returns 400 with expiry error
+5. Missing required field: Returns 400 with missing field error
