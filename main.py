@@ -18,7 +18,7 @@ if not GEMINI_API_KEY:
     print("Warning: GEMINI_API_KEY environment variable not set!")
 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 # Global knowledge base to store uploaded documents and HTML
 KNOWLEDGE_BASE = {
@@ -207,9 +207,42 @@ OUTPUT FORMAT (return only the JSON array, no markdown or additional text):
 
 Generate the test cases now:"""
 
-        # Call Gemini API
-        response = model.generate_content(prompt)
-        response_text = response.text.strip()
+        print("Calling Gemini API for test case generation...")
+
+        # Call Gemini API with safety settings
+        try:
+            response = model.generate_content(
+                prompt,
+                safety_settings={
+                    'HARM_CATEGORY_HARASSMENT': 'block_none',
+                    'HARM_CATEGORY_HATE_SPEECH': 'block_none',
+                    'HARM_CATEGORY_SEXUALLY_EXPLICIT': 'block_none',
+                    'HARM_CATEGORY_DANGEROUS_CONTENT': 'block_none',
+                }
+            )
+
+            # Check if response was blocked
+            if not response.text:
+                if hasattr(response, 'prompt_feedback'):
+                    print(f"Response blocked: {response.prompt_feedback}")
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"AI response was blocked due to safety filters: {response.prompt_feedback}"
+                    )
+                raise HTTPException(
+                    status_code=500,
+                    detail="AI generated an empty response. Please try again."
+                )
+
+            response_text = response.text.strip()
+            print(f"Received response from Gemini API (length: {len(response_text)})")
+
+        except Exception as api_error:
+            print(f"Gemini API Error: {str(api_error)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI API Error: {str(api_error)}"
+            )
 
         # Extract JSON from response (handle markdown code blocks)
         if "```json" in response_text:
@@ -220,12 +253,15 @@ Generate the test cases now:"""
         # Parse JSON response
         try:
             test_cases = json.loads(response_text)
+            print(f"Successfully parsed {len(test_cases)} test cases")
             return {
                 "status": "success",
                 "test_cases": test_cases,
                 "count": len(test_cases)
             }
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as json_error:
+            print(f"JSON parsing error: {str(json_error)}")
+            print(f"Response text: {response_text[:500]}")
             # If JSON parsing fails, return raw response for debugging
             return {
                 "status": "success",
@@ -236,6 +272,9 @@ Generate the test cases now:"""
     except HTTPException:
         raise
     except Exception as e:
+        print(f"Unexpected error in generate_test_cases: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error generating test cases: {str(e)}")
 
 
@@ -283,9 +322,35 @@ REQUIREMENTS:
 
 Generate the Selenium script now:"""
 
-        # Call Gemini API
-        response = model.generate_content(prompt)
-        script_code = response.text.strip()
+        print(f"Calling Gemini API for script generation (test case: {request.test_case.get('id', 'unknown')})")
+
+        # Call Gemini API with safety settings
+        try:
+            response = model.generate_content(
+                prompt,
+                safety_settings={
+                    'HARM_CATEGORY_HARASSMENT': 'block_none',
+                    'HARM_CATEGORY_HATE_SPEECH': 'block_none',
+                    'HARM_CATEGORY_SEXUALLY_EXPLICIT': 'block_none',
+                    'HARM_CATEGORY_DANGEROUS_CONTENT': 'block_none',
+                }
+            )
+
+            if not response.text:
+                raise HTTPException(
+                    status_code=500,
+                    detail="AI generated an empty response. Please try again."
+                )
+
+            script_code = response.text.strip()
+            print(f"Received script from Gemini API (length: {len(script_code)})")
+
+        except Exception as api_error:
+            print(f"Gemini API Error: {str(api_error)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI API Error: {str(api_error)}"
+            )
 
         # Clean up markdown code blocks if present
         if "```python" in script_code:
@@ -304,6 +369,9 @@ Generate the Selenium script now:"""
     except HTTPException:
         raise
     except Exception as e:
+        print(f"Unexpected error in generate_script: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error generating script: {str(e)}")
 
 
