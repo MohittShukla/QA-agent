@@ -32,7 +32,7 @@ KNOWLEDGE_BASE = {
 # Initialize FastAPI app
 app = FastAPI(
     title="QA Agent Backend",
-    description="AI-powered QA test case and script generation system",
+    description="AI-powered QA test case and script generation system | Created by Mohit Shukla",
     version="1.0.0"
 )
 
@@ -96,6 +96,7 @@ async def root():
         "message": "QA Agent Backend API is running",
         "version": "1.0.0",
         "status": "operational",
+        "author": "Mohit Shukla",
         "knowledge_base_status": {
             "docs_loaded": len(KNOWLEDGE_BASE["docs"]) > 0,
             "html_loaded": len(KNOWLEDGE_BASE["html"]) > 0

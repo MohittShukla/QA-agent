@@ -309,3 +309,4 @@ else:
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.divider()
 st.caption("Powered by Google Gemini AI • Built with Streamlit and FastAPI")
+st.caption("© 2025 Mohit Shukla • Autonomous QA Agent")
