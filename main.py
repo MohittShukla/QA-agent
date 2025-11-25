@@ -7,6 +7,10 @@ from pydantic import BaseModel
 import google.generativeai as genai
 from PyPDF2 import PdfReader
 import uvicorn
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure Google Generative AI
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
