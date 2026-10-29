@@ -18,7 +18,7 @@ if not GEMINI_API_KEY:
     print("Warning: GEMINI_API_KEY environment variable not set!")
 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.5-flash')
+model = genai.GenerativeModel('gemini-3.5-flash')
 
 # CORS origins - get from environment variable, default to all for local dev
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
